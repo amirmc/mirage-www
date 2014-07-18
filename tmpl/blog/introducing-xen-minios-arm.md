@@ -2,7 +2,7 @@ Mirage has just gained the ability to compile unikernels for the Xen/arm32
 platform, allowing Mirage guests to run under the Xen hypervisor on ARM
 devices such as the [Cubieboard 2][] and [CubieTruck][].
 
-[cubieboard 2]: http://cubietruck.com/collections/frontpage/products/cubieboard2-allwinner-a20-arm-cortex-a7-dual-core-development-boar
+[cubieboard 2]: http://cubietruck.com/collections/frontpage/products/cubieboard2-allwinner-a20-arm-cortex-a7-dual-core-development-board
 [cubietruck]: http://cubietruck.com/collections/frontpage/products/cubietruck-cubieboard3-cortex-a7-dual-core-2gb-ram-8gb-flash-with-wifi-bt
 
 
@@ -65,7 +65,7 @@ support:
 You'll need an ARM device with the Virtualization Extensions.
 I've been testing using the Cubieboard 2 (and CubieTruck):
 
-![Cubieboard2](/graphics/Cubieboard2.jpg)
+![Cubieboard2](/graphics/cubieboard2.jpg)
 
 The first step is to install Xen.
 [Running Xen on the Cubieboard2](http://openmirage.org/wiki/xen-on-cubieboard2)
@@ -83,14 +83,14 @@ The following commands will install the necessary versions if you're using
 the xen-arm-builder image:
 
 ```bash
-    $ opam init
-    $ git clone https://github.com/mirage/mirage-xen-libs
-    $ cd mirage-xen-libs
-    $ ./install.sh
-    $ opam pin mirage https://github.com/talex5/mirage.git#link_c_stubs
-    $ opam pin mirage-xen https://github.com/mirage/mirage-platform
-    $ opam pin tcpip https://github.com/talex5/mirage-tcpip.git#checksum
-    $ opam install mirage
+$ opam init
+$ git clone https://github.com/mirage/mirage-xen-libs
+$ cd mirage-xen-libs
+$ ./install.sh
+$ opam pin mirage https://github.com/talex5/mirage.git#link_c_stubs
+$ opam pin mirage-xen https://github.com/mirage/mirage-platform
+$ opam pin tcpip https://github.com/talex5/mirage-tcpip.git#checksum
+$ opam install mirage
 ```
 
 [mirage-install]: http://openmirage.org/wiki/install
@@ -155,13 +155,12 @@ For example, on Xen/unstable, we configure the beginning of the virtual
 address space to look like this (on Xen 4.4, the physical addresses would
 start at 80000000 instead):
 
-```
-| Virtual address  |  Physical address (IPA)  | Purpose
-| ---------------: | -----------------------: | --------
-|        400000    | 40000000                 | Stack (16 KB)
-|        404000    | 40004000                 | Translation tables (16 KB)
-|        408000    | 40008000                 | Kernel image
-```
+<table>
+<tr><th>Virtual address</th><th>Physical address (IPA)</th><th>Purpose</th></tr>
+<tr><td>400000</td><td>40000000</td><td>Stack (16 KB)</td></tr>
+<tr><td>404000</td><td>40004000</td><td>Translation tables (16 KB)</td></tr>
+<tr><td>408000</td><td>40008000</td><td>Kernel image</td></tr>
+</table>
 
 The physical address is always at a fixed offset from the virtual address and
 the addresses wrap around, so virtual address c0400000 maps back to physical
