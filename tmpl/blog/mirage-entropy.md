@@ -1,14 +1,12 @@
-# Organized chaos: managing randomness
-
-This post gives a bit of background on the *Random Number Generator* (RNG) in the
-new MirageOS 2.5.0.
+This post gives a bit of background on the *Random Number Generator* (RNG) in
+the recent MirageOS v2.5 release.
 
 First we give background about why RNGs are really critical for security. Then
-we try to clarify the often-confused concepts of "randomness" and "entropy" as
+we try to clarify the often-confused concepts of "randomness" and "entropy", as
 used in this context. Finally, we explore the challenges of harvesting
 good-quality entropy in a unikernel environment.
 
-## Playing dice
+### Playing dice
 
 Security software must play dice.
 
@@ -19,7 +17,7 @@ used to verify the identity of someone on the Internet, as in the case of
 verifying the possession of the secret RSA key associated with an X.509
 certificate. As an attacker guessing a secret can have disastrous consequences,
 it must be chosen in a manner that is not realistically predictable by anyone
-else.
+else — hence it needs to have a high degree of randomness.
 
 There are other reasons to use randomness. A number of algorithms require a
 unique value every time they are invoked and badly malfunction when this
@@ -55,10 +53,10 @@ state. How to go about solving this?
 [wiki-blinding]: https://en.wikipedia.org/wiki/Blinding_%28cryptography%29
 [wiki-random-oracle]: https://en.wikipedia.org/wiki/Random_oracle
 
-## Random failures
+### Failing fast at randomness
 
 Before taking a look at how we try to solve this problem, let's instead consider
-what happens if we fail to do so. There is even a [Wikipedia
+what happens if we **fail** to do so. There is even a [Wikipedia
 page][wiki-random-attacks] about this, which is a nice starting point. Some
 of the highlights:
 
@@ -103,9 +101,9 @@ problem in itself, but it is where an RNG malfunction can lead.
 
 These are only some of the most spectacular failures related to random numbers.
 For example, it is widely known in security circles that RNGs of embedded
-devices tend to be predictable, leading to widespread use of weak key on routers
+devices tend to be predictable, leading to widespread use of weak keys on routers
 and similar equipment, amongst other things. So when implementing a unikernel
-operating system, you don't want to end up on that Wikipedia page either.
+application, you don't want to end up on that Wikipedia page either.
 
 [wiki-random-attacks]: https://en.wikipedia.org/wiki/Random_number_generator_attack
 [ian-goldberg-netscape]: http://prng.net/faq/netscape-ssl/
@@ -116,7 +114,7 @@ operating system, you don't want to end up on that Wikipedia page either.
 [thereg-bitcoin]: http://www.theregister.co.uk/2015/06/01/blockchain_app_shows_how_not_to_code/
 [schneier-sony]: https://www.schneier.com/blog/archives/2011/01/sony_ps3_securi.html
 
-## Random sequences and stuff
+### Random sequences and stuff
 
 But what are random numbers, really? Intuitively, we tend to think about them as
 somehow "dancing around", or being "jiggly" in a sense. If we have a software
@@ -135,14 +133,14 @@ randomness][wiki-statistical-randomness]. We require each output, taken
 independently, to come from the same distribution (and in fact we want it to be
 the uniform distribution). That is, when we take a long sequence of outputs, we
 want them to cover the entire range, we want them to cover it evenly, and we
-want the evenness to increase as the number of outputs increases -- which
+want the evenness to increase as the number of outputs increases — which
 constitutes a purely frequentist definition of randomness. In addition, we want
 the absence of clear patterns between outputs. We don't want the sequence to
 look like `7, 8, 9, 10, ...`, even with a bit of noise, and we
 don't want correlation between outputs. The problem here is that no-one really
-knows what "having patterns" means; it is entirely possible that we simply
-searched for a pattern too simple, and that in fact there is one fully
-explaining the sequence lurking just around the complexity corner.
+knows what "having patterns" means; it is entirely possible that we only
+searched for simple patterns, and that in fact there is a pattern that fully
+explains the sequence lurking just around the complexity corner.
 
 Nonetheless, there is a well established battery of tests to check statistical
 randomness of RNG outputs, called the [Diehard Tests][diehard-web], and serves
@@ -152,18 +150,20 @@ with flying colors:
 
 `3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 6, 2, 6, 4, 3, 3, 8, 3, ...`
 
-We still would not recommend using digits of `π` as a secret key. We would recommend
+We still would not recommend using digits of `π` as a secret key.
+Neither would we recommend
 releasing software for everyone to study, which uses that sequence to generate
-the secrets, even less. But what went wrong?
+the secrets. But what went wrong?
 
 The other [concept of randomness][wiki-algorithmic-randomness]. Roughly, a
 random sequence should not be predictable to anyone with any knowledge other
 than the sequence itself. In other words, it cannot be compressed now matter how
 much we try, and in the extreme, this means that it cannot be generated by a
 program. While the latter restriction is obviously a little too strong for our
-purpose, it highlights a deep distinction in what people mean by being "random".
-Jumping around is one thing. Being actually unpredictable is a wholly different
-matter.
+purpose, it highlights a deep distinction in what people mean by being
+"random".
+Jumping around is one thing. Being *actually unpredictable* is a
+wholly different matter.
 
 There are many other [simple][wolfram-rule-30] mathematical processes which
 generate sequences with high statistical randomness. Many of those are used to
@@ -221,7 +221,7 @@ and reconstruct the earlier outputs.
 [wiki-forward-secrecy]: https://en.wikipedia.org/wiki/Forward_secrecy
 [wiki-preimage-attack]: https://en.wikipedia.org/wiki/Preimage_attack
 
-## Entropy
+### Entropy
 
 Although resistant to prediction based solely on the outputs, just like any
 other software RNG, Fortuna is still just a deterministic PRNG. Its entire
@@ -233,7 +233,7 @@ unpredictability that was contained in the seed.
 
 We often call this quality of unpredictability *entropy*. In a sense, by
 employing an algorithmic generator, we have just shifted the burden of being
-unpredictable around. But now we're cornered and have to search for entropy in
+unpredictable to somewhere else. But now we're cornered and have to search for entropy in
 the only place where a computer can find it: in the physical world.
 
 A typical (kernel-level) RNG-system reaches out into the world around it through
@@ -251,7 +251,7 @@ the requests for random bytes are served from the PRNG. The PRNG is used to
 "mix" the unpredictability inherent in its input, that is, to smooth out various
 timestamps and similar values into a statistically well-behaved sequence.
 
-## Do Virtual Machines Dream of Electric Sheep?
+### Do Virtual Machines Dream of Electric Sheep?
 
 Our problem here is that a virtual machine (VM) in a typical configuration
 barely sees any physical hardware. Users do not interact with VMs in server
@@ -263,7 +263,8 @@ This is a known problem and [various][randomness-exposed]
 [analyses][not-so-random] of the weakness of random outputs in virtual
 environments have been published. The problem is especially severe right after
 boot. The gradual trickle of unpredictability from hardware events slowly moves
-the pseudo-random stream into an unpredictable state, but at the very start, it
+the pseudo-random stream into an increasingly unpredictable state,
+but at the very start, it
 tends to be fairly predictable. Typically, operating systems store some of their
 PRNG output on shutdown and use it to quickly reseed their PRNG on the next
 boot, in order to reuse whatever entropy was contained in its state.
@@ -283,9 +284,9 @@ In the external case, we again rely on the kernel interacting with the hardware,
 but this time it's the dom0 kernel. We have a background service,
 [Xentropyd][xentropyd], which runs in dom0, reads the RNG and serves its output
 to other domains through the Xen Console. The problem is that in many scenarios,
-like hosting on popular cloud providers, we cannot expect extra cooperation from
-dom0. A bigger problem is that although most of the code is there, we haven't
-fully fleshed out this design and it remains disabled in MirageOS 2.5.0.
+like hosting on popular cloud providers, we cannot expect this degree of cooperation from
+dom0. A bigger problem is that although most of the code is present, we haven't
+fully fleshed out this design and it remains disabled in MirageOS 2.5.0
 
 So we need to be able to achieve unpredictability relying purely on what is
 available inside a unikernel. A unikernel has no direct exposure to the
@@ -302,9 +303,9 @@ derives from thermal readings, and is available through `RDRAND` and (more
 directly) `RDSEED` instructions. The community has expressed concern that
 relying exclusively on this generator might not be a wise choice: it could
 silently malfunction, and its design is hidden in the hardware, which raises
-concerns about potential intentional biases in the output -- a scheme not
-[unheard of][dual-ec-drgb]. But as entropy is additive, its output can never
-reduce whichever unpredictability the system already has. Therefore, if
+concerns about potential intentional biases in the output — a scheme not
+[unheard of][dual-ec-drgb]. However, since entropy is additive, its output can never
+reduce whatever unpredictability the system already has. Therefore, if
 available, we continuously sample this on-die RNG, and inject its outputs into
 our PRNG.
 
@@ -336,7 +337,7 @@ inherent in the input events.
 
 This leaves us with the problem of boot-time entropy. Not only can the saved
 random seed be reused by cloning the disk image, but in many cases, a MirageOS
-unikernel is running without such a storage at all!
+unikernel is running without such storage at all!
 
 Following the design of [Whirlwind RNG][not-so-random], we employ an entropy
 [bootstrapping loop][bootstrap-code]. It's an iterated computation, which
@@ -357,20 +358,19 @@ divergence, and ensuring that the state is unpredictable from the very start.
 [bootstrap-code]: https://github.com/mirage/mirage-entropy/blob/863b48d4e33b43ca31c49c2e8caef4e367fab7b2/lib/entropy_xen.ml#L79
 
 
-## Parting words
+### Parting words
 
 While some of our techniques (in particular bootstrapping on ARM) need a little
-more exposure before we place our full confidence in them -- and users should
+more exposure before we place our full confidence in them — and users should
 probably avoid generating long-term private keys in unikernels running on bare
-Xen just yet -- the combination of boostrapping, continuous reseeding, and
+Xen just yet — the combination of boostrapping, continuous reseeding, and
 robust accumulation gives us a hopefully comprehensive solution to generating
 randomness in a unikernel environment.
 
 We intend to re-evaluate the effectiveness of this design after getting some
 experience with how it works in the wild. To this end, we particularly
-appreciate the community feedback.
-
-You can reach us through our [mailing list][mirageos-devel-web], or hop onto
+appreciate the community feedback and
+you can reach us through our [mailing list][mirageos-devel-web], or hop onto
 `freenode` and join `#mirage`.
 
 [mirageos-devel-web]: http://lists.xenproject.org/cgi-bin/mailman/listinfo/mirageos-devel
